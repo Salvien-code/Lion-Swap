@@ -4,7 +4,7 @@ import { Web3Provider } from "@ethersproject/providers";
 
 export const removeLiquidity = async (
   signer: Signer,
-  removeLPTokensWei: number
+  removeLPTokensWei: BigNumber
 ) => {
   const exchangeContract = new Contract(EXCHANGE_ADDRESS, EXCHANGE_ABI, signer);
 
@@ -14,7 +14,7 @@ export const removeLiquidity = async (
 
 export const getTokenAfterRemove = async (
   provider: Web3Provider,
-  removeLPTokenWei: number,
+  removeLPTokenWei: BigNumber,
   _ethBalance: BigNumber,
   lionTokenReserve: BigNumber
 ) => {

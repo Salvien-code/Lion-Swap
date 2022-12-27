@@ -11,8 +11,8 @@ export const getAmountOfTokenReceivedFromSwap = async (
   _swapAmountWei: BigNumber,
   provider: Web3Provider,
   ethSelected: boolean,
-  ethBalance: number,
-  reservedCD: number
+  ethBalance: BigNumber | 0,
+  reservedCD: BigNumber
 ) => {
   const exchangeContract = new Contract(
     EXCHANGE_ADDRESS,
