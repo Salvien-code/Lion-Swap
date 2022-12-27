@@ -33,3 +33,16 @@ export const addLiquidity = async (
     console.error(err);
   }
 };
+
+export const calculateCD = async (
+  _addEther = "0",
+  etherBalanceContract: BigNumber,
+  ltTokenReserve: BigNumber
+) => {
+  const _addEtherAmountWei = utils.parseEther(_addEther);
+
+  const lionTokenAmount = _addEtherAmountWei
+    .mul(ltTokenReserve)
+    .div(etherBalanceContract);
+  return lionTokenAmount;
+};
