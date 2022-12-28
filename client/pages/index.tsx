@@ -4,7 +4,7 @@ import Image from "next/image";
 import styles from "../styles/Home.module.css";
 import { useRef, useState, useEffect } from "react";
 import Web3Modal from "web3modal";
-import { addLiquidity, calculateCD } from "../utils/addLiquidity";
+import { addLiquidity, calculateLT } from "../utils/addLiquidity";
 import {
   getLionTokensBalance,
   getEtherBalance,
@@ -20,7 +20,7 @@ export default function Home() {
 
   const [loading, setLoading] = useState(false);
   const [removeLT, setRemoveLT] = useState(zero);
-  const [addEther, setAddEther] = useState(zero);
+  const [addEther, setAddEther] = useState<BigNumber | string>(zero);
   const [ltBalance, setLtBalance] = useState(zero);
   const [lpBalance, setLpBalance] = useState(zero);
 
@@ -217,5 +217,211 @@ export default function Home() {
     return web3Provider;
   };
 
-  return <div></div>;
+  useEffect(() => {
+    if (!walletConnected) {
+      // @ts-ignore
+      web3ModalRef.current = new Web3Modal({
+        network: "goerli",
+        providerOptions: {},
+        disableInjectedProvider: false,
+      });
+      connectWallet();
+      getAmounts();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [walletConnected]);
+
+  const renderButton = () => {
+    if (!walletConnected) {
+      return (
+        <button onClick={connectWallet} className={styles.button}>
+          Connect your wallet
+        </button>
+      );
+    }
+
+    if (loading) {
+      return <button className={styles.button}>Loading...</button>;
+    }
+
+    if (liquidityTab) {
+      return (
+        <div>
+          <div className={styles.description}>
+            You have:
+            <br />
+            {utils.formatEther(ltBalance)} Lion Tokens
+            <br />
+            {utils.formatEther(ethBalance)} Ether
+            <br />
+            {utils.formatEther(lpBalance)} Lion LP Tokens
+          </div>
+
+          <div>
+            {utils.parseEther(reservedLT.toString()).eq(zero) ? (
+              <div>
+                <input
+                  type="number"
+                  placeholder="Amount of Ether"
+                  onChange={(e) =>
+                    setAddEther(e.target.value !== null ? "0" : e.target.value)
+                  }
+                  className={styles.input}
+                />
+                <input
+                  type="number"
+                  placeholder="Amount of Lion Tokens"
+                  onChange={(e) =>
+                    setAddLtTokens(
+                      BigNumber.from(utils.parseEther(e.target.value || "0"))
+                    )
+                  }
+                  className={styles.input}
+                />
+                <button className={styles.button} onClick={_addLiquidty}>
+                  Add
+                </button>
+              </div>
+            ) : (
+              <div>
+                <input
+                  type="number"
+                  placeholder="Amount of Ether"
+                  onChange={async (e) => {
+                    setAddEther(e.target.value !== null ? "0" : e.target.value);
+                    const _addLTTokens = await calculateLT(
+                      e.target.value || "0",
+                      etherBalanceContract,
+                      reservedLT
+                    );
+                    setAddLtTokens(_addLTTokens);
+                  }}
+                  className={styles.input}
+                />
+                <div className={styles.inputDiv}>
+                  {`You will need ${utils.formatEther(
+                    addLtTokens
+                  )} Lion Tokens`}
+                </div>
+                <button className={styles.button} onClick={_addLiquidty}>
+                  Add
+                </button>
+              </div>
+            )}
+            <div>
+              <input
+                type="number"
+                placeholder="Amount of Lion LP Tokens"
+                onChange={async (e) => {
+                  setRemoveLPTokens(e.target.value || "0");
+                  await _getTokenAfterRemove(e.target.value || "0");
+                }}
+                className={styles.input}
+              />
+              <div className={styles.inputDiv}>
+                {`You will get ${utils.formatEther(
+                  removeLT
+                )} Lion Tokens and ${utils.formatEther(removeEther)} Ether`}
+              </div>
+              <button className={styles.button1} onClick={_removeLiquidity}>
+                Remove
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    } else {
+      return (
+        <div>
+          <input
+            type="number"
+            placeholder="Amount"
+            onChange={async (e) => {
+              setSwapAmount(e.target.value || "");
+              await _getAmountOfTokenReceivedFromSwap(
+                e.target.value !== null ? 0 : e.target.value
+              );
+            }}
+            className={styles.input}
+            value={swapAmount}
+          />
+          <select
+            className={styles.select}
+            name="dropdown"
+            id="dropdown"
+            onChange={async () => {
+              setEthSelected(!ethSelected);
+              await _getAmountOfTokenReceivedFromSwap(0);
+              setSwapAmount("");
+            }}
+          >
+            <option value="eth">Ethereum</option>
+            <option value="LionToken">Lion Token</option>
+          </select>
+          <br />
+          <div className={styles.inputDiv}>
+            {ethSelected
+              ? `You will get ${utils.formatEther(
+                  tokenToBeReceivedAfterSwap
+                )} Lion Tokens`
+              : `You will get ${utils.formatEther(
+                  tokenToBeReceivedAfterSwap
+                )} Ether`}
+          </div>
+          <button className={styles.button} onClick={_swapTokens}>
+            Swap
+          </button>
+        </div>
+      );
+    }
+  };
+
+  return (
+    <div>
+      <Head>
+        <title>Lion Swap</title>
+        <meta name="description" content="Lion Swap" />
+        <link rel="icon" href="/favicon.ico" />
+      </Head>
+      <div className={styles.main}>
+        <div>
+          <h1 className={styles.title}>Welcome to the Lion Exchange!</h1>
+          <div className={styles.description}>
+            Exchange Ethereum &#60;&#62; Lion Token
+          </div>
+
+          <div>
+            <button
+              className={styles.button}
+              onClick={() => setLiquidityTab(true)}
+            >
+              Liquidity
+            </button>
+            <button
+              className={styles.button}
+              onClick={() => {
+                setLiquidityTab(false);
+              }}
+            >
+              Swap
+            </button>
+          </div>
+          {renderButton()}
+        </div>
+        <div>
+          <Image
+            width="70"
+            height="70"
+            src="/Lions.svg"
+            alt="lion"
+            className={styles.image}
+          />
+        </div>
+      </div>
+
+      <footer className={styles.footer}>
+        Made with &#10084; by Simon Samuel
+      </footer>
+    </div>
+  );
 }

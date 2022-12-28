@@ -34,9 +34,9 @@ export const addLiquidity = async (
   }
 };
 
-export const calculateCD = async (
+export const calculateLT = async (
   _addEther = "0",
-  etherBalanceContract: BigNumber,
+  etherBalanceContract: BigNumber | 0,
   ltTokenReserve: BigNumber
 ) => {
   const _addEtherAmountWei = utils.parseEther(_addEther);
