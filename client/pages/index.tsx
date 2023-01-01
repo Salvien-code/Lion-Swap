@@ -263,9 +263,7 @@ export default function Home() {
                 <input
                   type="number"
                   placeholder="Amount of Ether"
-                  onChange={(e) =>
-                    setAddEther(e.target.value !== null ? "0" : e.target.value)
-                  }
+                  onChange={(e) => setAddEther(e.target.value || "0")}
                   className={styles.input}
                 />
                 <input
@@ -288,7 +286,7 @@ export default function Home() {
                   type="number"
                   placeholder="Amount of Ether"
                   onChange={async (e) => {
-                    setAddEther(e.target.value !== null ? "0" : e.target.value);
+                    setAddEther(e.target.value || "0");
                     const _addLTTokens = await calculateLT(
                       e.target.value || "0",
                       etherBalanceContract,
